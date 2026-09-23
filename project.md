@@ -443,3 +443,65 @@ folder structure.
 - **Severity data:** Pothole Mix / SHREC2022 (Mendeley `kfth5g2xk3`);
   PothRGBD (arXiv `2505.04207`).
 - **Ultralytics YOLO:** `docs.ultralytics.com`.
+
+---
+
+# PART C — Remaining-Build Decisions (Locked)
+
+## 21. Status Update — Locked Build Decisions
+
+> This subsection follows the §12 → §19 status pattern. It **locks** several items
+> that §19 left open ("Still open (to finalize during implementation)"). These are
+> final for the remaining build unless a strong, stated reason overrides them.
+
+### 21.1 Detector
+- **Model:** Ultralytics **YOLO11s**, **detection-only (NOT segmentation)**,
+  **imgsz 640**, trained **once**.
+- The **no-tiling / uniform-SAHI / adaptive-tiling** configurations are all
+  **inference-time wrappers over the SAME weights** — one training run, three
+  inference paths.
+- The **segmentation-YOLO path is parked out-of-scope.** Severity masks come from
+  the severity dataset (§21.3), **not** from the detector. (This supersedes the
+  §14/§15.1 aside that the YOLO segmentation variant could yield masks for the
+  severity head.)
+
+### 21.2 Dataset scope
+- **RDD2022 India-only to start.**
+- **Gate:** if India **D40 (pothole) training instances ≥ ~2,500**, proceed
+  India-only; **else fold in China_MotorBike** before training.
+- This concretizes the §14 mitigation ("focus on pothole-heavier country subsets").
+
+### 21.3 Severity
+- **Tier labels derived from depth/volume:** **PothRGBD** is the target source;
+  **Pothole Mix (area-based)** is the **committed fallback**.
+- **The CNN input is the RGB crop ONLY.** Mask/depth are **LABEL SOURCES, never
+  model inputs.** (This narrows the §15.3 phrasing "crop plus segmentation-mask
+  area, and optionally depth" — those extra signals are used only to derive tier
+  labels, not fed to the model at train or inference time.)
+- **Quantitative** severity evaluation is on the **severity dataset's own held-out
+  split**. **Qualitative only on RDD2022** (RDD2022 has no severity labels).
+
+### 21.4 Evaluation spine (finalized)
+- The local test set is a **self-carved, seeded, stratified, FROZEN split from the
+  labeled India images** — the official RDD2022 test labels are **server-only and
+  cannot be scored locally** (§14).
+- **Metrics:** **mAP@50**, **mAP@50:95**, **recall stratified by S/M/L
+  object-size bucket**, and **latency/FPS**.
+- **Size buckets and the split policy are fixed BEFORE any training.**
+
+### 21.5 Environment note
+- **Local torch is CPU-only (`2.14.0+cpu`)** → local runs are **smoke tests
+  only**; **all real training on Colab T4.**
+
+### 21.6 Items from §19 now locked
+- Detector variant/size and input resolution → **YOLO11s, imgsz 640** (§21.1).
+- Dataset scope within RDD2022 → **India-only, with China_MotorBike gate** (§21.2).
+- Severity label source and model-input policy → **depth/volume tiers; RGB-crop-only
+  input** (§21.3).
+- Evaluation split policy and metrics → **frozen seeded stratified India split;
+  mAP@50, mAP@50:95, recall-by-size, latency/FPS** (§21.4).
+- Compute/environment → **CPU local (smoke tests), Colab T4 for training** (§21.5).
+
+Still open (unchanged from §19): exact tile-size/overlap and trigger policy; exact
+severity tier thresholds; training hyperparameters; deployment platform and UI
+framework; final folder structure.
