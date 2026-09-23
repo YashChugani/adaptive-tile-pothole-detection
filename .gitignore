@@ -15,6 +15,9 @@ data/
 # Ultralytics / training outputs
 runs/
 
+# Generated Colab-local data.yaml (regenerated on Colab; never committed)
+configs/_*.yaml
+
 # Python caches
 __pycache__/
 *.py[cod]
