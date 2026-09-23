@@ -1,0 +1,12 @@
+# Frozen 4-class RDD2022 India detection set (Component 2B).
+# 'path' is the absolute repo root on this machine; edit it if the repo moves.
+path: D:/College/SEM 7/Computer Vision/Pothole-Detection-System
+train: configs/splits/train.txt
+val: configs/splits/val.txt
+test: configs/splits/test.txt
+nc: 4
+names:
+  0: D00
+  1: D10
+  2: D20
+  3: D40
