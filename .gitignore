@@ -1,0 +1,35 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Datasets (large, re-downloadable — kept out of git)
+data/
+
+# Model weights / checkpoints
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# Ultralytics / training outputs
+runs/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Build / packaging
+*.egg-info/
+build/
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

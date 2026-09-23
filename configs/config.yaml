@@ -1,0 +1,32 @@
+# Central config — placeholders only. Fill in during implementation.
+# See project.md and CLAUDE.md. Do NOT assume unset values are finalized.
+
+paths:
+  data_root: "data/"            # gitignored; datasets live here
+  rdd2022: "data/rdd2022/"      # detection dataset (VOC XML -> YOLO .txt)
+  severity_data: "data/severity/"  # mask/depth set (Pothole Mix / PothRGBD)
+  runs: "runs/"                 # training/inference outputs (gitignored)
+
+detection:
+  model: "yolo11n.pt"           # primary detector; YOLO26 optional baseline
+  imgsz: 640
+  epochs: null                  # TBD
+  batch: null                   # TBD
+  device: null                  # e.g. 0 (GPU) or "cpu"
+  classes: ["D40"]              # pothole focus; RDD2022 also has D00/D10/D20
+
+tiling:
+  enabled: true
+  # Adaptive/triggered slicing built on SAHI. Exact policy TBD.
+  slice_height: null            # TBD
+  slice_width: null             # TBD
+  overlap_ratio: null           # TBD
+  trigger: null                 # e.g. resolution-based or coarse-pass driven
+
+severity:
+  backbone: null                # e.g. resnet18 / mobilenet — TBD
+  tiers: ["low", "medium", "high"]
+  input_size: null              # crop size fed to the head — TBD
+
+# Note on scope: tile size/overlap, trigger policy, severity labels/thresholds,
+# and hyperparameters are intentionally unset (project.md §19).
