@@ -37,13 +37,15 @@ COMMITTED_YAML = "configs/rdd_india.yaml"              # class names come from h
 COLAB_YAML = "configs/_rdd_india_colab.yaml"          # generated, gitignored
 SPLIT_DIR = "configs/splits"                           # frozen train/val/test lists
 DATASET_SUBDIR = "data/rdd2022_india"                 # images/ + labels/ land here
+# PRIMARY: copy one of these preinstalled system fonts (offline, always present on Colab).
+ARIAL_SYSTEM_FONTS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+]
+# FALLBACK ONLY: network download (this was the 3A failure mode, so it is never the default).
 ARIAL_URLS = [
     "https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf",
     "https://ultralytics.com/assets/Arial.ttf",
-]
-ARIAL_FALLBACK_FONTS = [
-    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 ]
 
 
@@ -87,23 +89,29 @@ def _generate_yaml(repo: Path) -> Path:
 
 
 def _ensure_arial() -> Path:
+    """Guarantee Arial.ttf in the Ultralytics config dir WITHOUT depending on a network
+    fetch at the top of training. Primary path: copy a preinstalled system font; the
+    ultralytics.com download is only a fallback (it was the 3A failure mode)."""
     from ultralytics.utils import USER_CONFIG_DIR
     dest = Path(USER_CONFIG_DIR) / "Arial.ttf"
     if dest.exists():
+        print(f"Arial.ttf: already present at {dest} (no action)")
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
+    # PRIMARY: copy an offline, preinstalled system font renamed to Arial.ttf.
+    for fnt in ARIAL_SYSTEM_FONTS:
+        if Path(fnt).exists():
+            shutil.copy(fnt, dest)
+            print(f"Arial.ttf: copied preinstalled system font {fnt} -> {dest} (PRIMARY, offline)")
+            return dest
+    # FALLBACK ONLY: network download.
     for url in ARIAL_URLS:
         try:
             urllib.request.urlretrieve(url, dest)
-            print(f"fetched Arial.ttf from {url}")
+            print(f"Arial.ttf: downloaded from {url} (network FALLBACK)")
             return dest
         except Exception as e:  # noqa: BLE001
             print(f"  Arial download failed ({url}): {e}")
-    for fnt in ARIAL_FALLBACK_FONTS:
-        if Path(fnt).exists():
-            shutil.copy(fnt, dest)
-            print(f"copied fallback font {fnt} -> {dest} (metric-compatible stand-in)")
-            return dest
     print(f"WARNING: could not provide Arial.ttf; upload one to {dest} if check_font fails.")
     return dest
 
