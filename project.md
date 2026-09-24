@@ -505,3 +505,61 @@ folder structure.
 Still open (unchanged from §19): exact tile-size/overlap and trigger policy; exact
 severity tier thresholds; training hyperparameters; deployment platform and UI
 framework; final folder structure.
+
+---
+
+# PART D — Contribution 1 Pivot
+
+## 22. Contribution 1 pivot (evidence-based) — 2026-09-24
+
+> **This section supersedes the adaptive-tiling framing of Contribution 1** (§4.2,
+> §15.2, §16, §21.1's tiling references). Contribution 1 is reframed from *adaptive
+> tiling* to *minority-class D40 detection*. The pivot is driven by measured evidence,
+> not preference. Contribution 2 (learned severity) is unchanged and is now the
+> primary novelty.
+
+### 22.1 Original Contribution 1
+Adaptive tile-based (SAHI-derived) processing to recover small/distant potholes —
+the hypothesis being that downscaling high-res road images to the detector's input
+loses the resolution needed to detect tiny/distant D40.
+
+### 22.2 Diagnostic evidence (frozen TEST split, best.pt; baseline D40 AP@50 = 0.391)
+Run on the frozen evaluation spine (Component 2B) with the reference scorer
+(`src/detection/eval_stratified.py`):
+
+- **Resolution probe (inference-only, imgsz 1280 vs 640):** did **not** lift small-D40
+  recall@0.25 — **0.403 → 0.388** — and overall D40 recall@0.25 actually **fell
+  0.340 → 0.183**. Upscaling inference resolution does not help; it hurts.
+- **Small-bucket miss analysis (67 small-D40 GT):** ~**45%** of small-D40 misses are
+  **confidence failures** (found at conf 0.001 but dropped by conf 0.25, at scores
+  ~0.09–0.20); only ~**15%** are **localization failures**.
+- **No truly-tiny sub-population:** the test set has **zero <16px potholes**; the
+  smallest D40 is ~**21px native** (median ~31px). There is no microscopic population
+  for tiling to recover.
+
+**Conclusion:** on RDD2022 India, the D40 bottleneck is **confidence / class
+imbalance on a minority class**, **not spatial resolution**. Tiling's mechanism
+(preserve local resolution for tiny objects) does not apply at these scales, so it is
+dropped as a contribution.
+
+### 22.3 Reframed Contribution 1 — minority-class D40 detection
+Improve minority-class D40 detection, measured on the frozen spine against the
+**0.391 baseline**:
+- (a) **operating-threshold analysis** (the confidence-failure finding suggests the
+  default 0.25 op point discards recoverable small-D40);
+- (b) **class-aware sampling / loss weighting** for the D40 minority class;
+- (c) **optional confidence calibration**.
+
+### 22.4 Scope note (honesty)
+This is a finding **specific to RDD2022 India at 720px source / 640 inference** — not
+a universal claim that tiling is useless. At higher source resolutions or with a
+genuinely tiny-object population, tiling could still be the right lever.
+
+### 22.5 Status of the tiling work
+Kept as a **reported negative result** (the diagnostic and its evidence above), not a
+deleted idea. The empty `src/tiling/` scaffolding is removed; SAHI is no longer a
+build dependency. `eval_stratified.py` and the frozen split/configs are unchanged.
+
+### 22.6 Contribution 2 unchanged
+The learned severity head (§15.3, §21.3) is **unchanged** and is now the project's
+**primary novelty**.
