@@ -1,0 +1,79 @@
+{
+  "description": "Severity-tier labeling meta (Component 6.2). Reproducibility record for depth-to-tier labels; raw labels live in gitignored data/severity/labels_*.csv.",
+  "method": "local-annulus RANSAC plane; depth_below_surface = depth - plane (deeper = larger positive); robust statistic = 90th percentile over in-mask valid pixels.",
+  "common": {
+    "robust_percentile": 90,
+    "seed": 42,
+    "plane_mode": "annulus",
+    "annulus_inner_px": 15,
+    "annulus_outer_px": 61,
+    "min_ring_px": 200,
+    "min_mask_px": 20,
+    "ransac_inlier_flag_below": 0.5
+  },
+  "pothrgbd": {
+    "role": "primary",
+    "units": "mm",
+    "clip_range_mm": [
+      200,
+      3000
+    ],
+    "split": {
+      "train": 0.7,
+      "val": 0.15,
+      "test": 0.15,
+      "grouped_by": "timestamp_prefix"
+    },
+    "tertile_cuts_mm": {
+      "c1": 23.122,
+      "c2": 38.133,
+      "frozen_on": "train"
+    },
+    "tiers": {
+      "low": "dbs<=c1",
+      "medium": "c1<dbs<=c2",
+      "high": "dbs>c2"
+    }
+  },
+  "pothole440": {
+    "role": "cross_check_inference_only",
+    "units": "raw_uint8",
+    "clip": "none (already surface-referenced)",
+    "tertile_cuts_raw": {
+      "d1": 159.0,
+      "d2": 166.0,
+      "frozen_on": "all"
+    }
+  },
+  "snr_gate": {
+    "ratio": "depth_below_surface_scalar / road_ring_residual_std",
+    "bands": {
+      "clean": ">2",
+      "marginal": "1-2",
+      "noise": "<1"
+    },
+    "pothrgbd_clean_counts": {
+      "train": {
+        "low": 201,
+        "medium": 215,
+        "high": 202
+      },
+      "val": {
+        "low": 42,
+        "medium": 41,
+        "high": 44
+      },
+      "test": {
+        "low": 35,
+        "medium": 55,
+        "high": 44
+      }
+    },
+    "pothrgbd_clean_total": 879
+  },
+  "manifests": {
+    "pothrgbd": "data/severity/labels_pothrgbd.csv",
+    "pothole440": "data/severity/labels_pothole440.csv",
+    "note": "frozen as severity ground truth; gitignored (data/)."
+  }
+}
