@@ -31,6 +31,9 @@ DRIVE_BASE = "/content/drive/MyDrive/pothole"          # your Drive project fold
 REPO_DIR = "/content/Pothole-Detection-System"         # where the repo is cloned
 DATA_ZIP_DRIVE = f"{DRIVE_BASE}/rdd2022_india.zip"     # the one-time uploaded data zip
 CHECKPOINT_DIR = f"{DRIVE_BASE}/checkpoints"           # Ultralytics project= (on Drive)
+USE_OVERSAMPLED_TRAIN = False   # True -> train on configs/splits/train_oversampled.txt
+#                                 (D40-bearing images replicated x3; val/test unchanged).
+#                                 False -> baseline train.txt (identical baseline behavior).
 # =====================================================================================
 
 COMMITTED_YAML = "configs/rdd_india.yaml"              # class names come from here
@@ -74,10 +77,11 @@ def _generate_yaml(repo: Path) -> Path:
     import yaml  # provided by ultralytics/pyyaml
     names = yaml.safe_load((repo / COMMITTED_YAML).read_text())["names"]
     out = repo / COLAB_YAML
+    train_file = "train_oversampled.txt" if USE_OVERSAMPLED_TRAIN else "train.txt"
     lines = [
         "# GENERATED on Colab by colab_setup.py -- do not commit (gitignored).",
         f"path: {repo.as_posix()}",
-        f"train: {SPLIT_DIR}/train.txt",
+        f"train: {SPLIT_DIR}/{train_file}",
         f"val: {SPLIT_DIR}/val.txt",
         f"test: {SPLIT_DIR}/test.txt",
         f"nc: {len(names)}",
@@ -142,6 +146,7 @@ def setup(repo_dir: str = REPO_DIR, checkpoint_dir: str = CHECKPOINT_DIR) -> dic
     print(f"repo commit    : {commit}")
     print(f"images/labels  : {n_img} / {n_lab}  (under {dst_root})")
     print(f"data.yaml      : {data_yaml}")
+    print(f"train list     : {'train_oversampled.txt (D40-bearing x3)' if USE_OVERSAMPLED_TRAIN else 'train.txt (baseline)'}")
     print(f"checkpoint dir : {checkpoint_dir}  (Ultralytics project=)")
     return {
         "data_yaml": str(data_yaml),
