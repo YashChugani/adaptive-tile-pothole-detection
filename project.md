@@ -563,3 +563,56 @@ build dependency. `eval_stratified.py` and the frozen split/configs are unchange
 ### 22.6 Contribution 2 unchanged
 The learned severity head (§15.3, §21.3) is **unchanged** and is now the project's
 **primary novelty**.
+
+## 23. Component 5 detector results (minority-class interventions) — 2026-10-01
+
+All numbers on the frozen spine (Component 2B), D40 scored via
+`src/detection/eval_stratified.py` (same matcher/buckets throughout).
+
+### 23.1 Baseline YOLO11s
+- Test **D40 AP@50 = 0.389**, **recall = 0.469** at the val-selected operating point
+  **conf = 0.20**.
+- Size-stratified test recall (small / medium / large) = **0.427 / 0.566 / 0.437**.
+
+### 23.2 Operating-threshold analysis (Component 5.1)
+- Lowering conf **0.25 → 0.20** lifted overall test **D40 F1 0.34 → 0.39**.
+- **Small-bucket recall essentially flat** — the gains came from medium/large. PR
+  curves saved (`data/eval/pr_curve_{val,test}.csv`, gitignored).
+
+### 23.3 Class-aware oversampling (Component 5.2)
+- D40-bearing train images replicated **x3** (image-share **19.8% → 42.5%**).
+- Test **D40 AP@50 = 0.418** at val conf = 0.30 — but **small-bucket recall
+  REGRESSED 0.427 → 0.373**, trading recall for precision (**0.448 → 0.610**).
+- **Conclusion:** oversampling did **not** help small-pothole detection. Consistent
+  with D40 being an **instance-level plurality (46.5%)** of train boxes (§Component
+  5.2 setup) — the model was **not box-starved**, so adding duplicate same-distribution
+  positives raised precision/confidence but not small-object recall.
+
+### 23.4 Decision — detector locked
+- **Detector locked at baseline @ conf 0.20.**
+- **Oversampling kept as an honest negative ablation row** (not deleted).
+- **Class-weighted loss NOT pursued** — diminishing returns already established by the
+  threshold + oversampling results.
+- **Effort redirected to the severity head** (Contribution 2, the primary novelty).
+
+### 23.5 Low-power caveat
+The small bucket is **67 test instances** (~1.5 pt per instance), so single-split
+small-bucket numbers are **directional**. To be firmed up with the frozen **5-fold CV**
+(Component 2B) at results time for a CI over the full 453 small-D40.
+
+## 24. Parked stretch goals (post-core) — 2026-10-01
+
+### 24.1 External-data top-up for the detector (PARKED)
+Add images from a **different distribution** — another RDD2022 country subset or a
+distinct pothole dataset — to improve *variety*, **NOT** more same-distribution India
+images (§23.3 showed volume alone does not help small-object recall).
+
+**Hard rules if pursued:**
+- New data enters the **TRAIN list ONLY**; the frozen **`val.txt` and `test.txt` stay
+  byte-identical**.
+- Run a **pHash near-duplicate check against val/test** (same method as Component 2B)
+  and **exclude any external image that duplicates** a val/test image.
+- Scored with the existing evaluators as a **"+external data" ablation row**.
+
+**Priority:** lower expected value than severity-head work. **Attempt only if the core
+project is complete** (severity head → pipeline → demo → results).
