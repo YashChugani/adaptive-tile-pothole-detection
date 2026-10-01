@@ -616,3 +616,46 @@ images (§23.3 showed volume alone does not help small-object recall).
 
 **Priority:** lower expected value than severity-head work. **Attempt only if the core
 project is complete** (severity head → pipeline → demo → results).
+
+## 25. Component 6 severity head results (Contribution 2) — 2026-10-01
+
+The primary novelty. A decoupled severity CNN that scores a detected pothole crop into a
+low/med/high tier, trained on a depth dataset (RDD2022 has no severity labels).
+
+### 25.1 Datasets & tier labels
+- **PothRGBD** (primary): 1000 RGB-D, Intel RealSense D415, depth in mm.
+- **Pothole440** (cross-check): 440, Go!SCAN 3D-scanner depth.
+- **Tiers = equal-count tertiles of depth-below-local-surface.** PothRGBD uses a **RANSAC
+  local-annulus plane fit** per pothole (depth − plane; deeper = larger positive); Pothole440
+  uses its already-surface-referenced raw depth. A per-pothole **SNR gate**
+  (depth-below-surface / road-ring-residual-std **> 2**) kept **879/996** PothRGBD potholes as
+  clean labels. Cuts, seeds, clip range, and SNR bands are frozen in
+  `configs/severity_meta.json`.
+
+### 25.2 Model
+- **ResNet-18, ImageNet-pretrained, all layers fine-tuned.** RGB crop **resized to 224**
+  (removes box-size as a shortcut, so the vs-box-area comparison is fair). **RGB-only input** —
+  depth was a *label source only*, so the head runs on RDD2022 detections at demo time.
+- Trained on **618** clean PothRGBD crops; early-stop on **val macro-F1** (n=127).
+
+### 25.3 Headline result (PothRGBD clean TEST, n=134)
+- **CNN accuracy 0.672 / macro-F1 0.680** vs **box-area heuristic 0.41 / 0.42** → **+0.26
+  accuracy**.
+- Area-vs-depth-tier **Spearman rho = 0.26** (box area explains only ~7% of depth-tier
+  variance) — confirms depth-derived severity carries appearance signal that box area cannot,
+  i.e. the head is not just re-deriving size.
+
+### 25.4 Ablation
+- **Frozen-backbone linear probe = 0.33 macro-F1 (chance).** Fine-tuning the backbone is
+  **necessary**; generic ImageNet features are insufficient for this task.
+
+### 25.5 Honest caveats
+- **Overfits by ~epoch 9** (train macro-F1 0.97 vs val ~0.55); the result **relies on early
+  stopping**. More data / stronger regularization would likely help.
+- **n=134** → report with roughly **±8 pp CI**.
+- Confusion: **low** near-perfect, **medium** is the hard middle tier (bleeds into high/low).
+
+### 25.6 Cross-dataset (Pothole440, n=434)
+- **CNN 0.318 vs heuristic 0.28**, both near chance → the **learned severity is
+  sensor/domain-specific**; cross-sensor transfer **does not hold** and is a **stated
+  limitation** (parallels the tiling negative result in §22 — honest negatives, not hidden).
