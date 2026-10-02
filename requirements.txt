@@ -52,3 +52,6 @@ ultralytics==8.4.160
 ultralytics-platform==0.1.57
 ultralytics-thop==2.1.6
 urllib3==2.8.0
+
+# Demo UI only (app/demo.py); not needed for training/eval.
+gradio==6.29.0

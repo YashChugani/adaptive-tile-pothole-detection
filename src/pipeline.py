@@ -79,7 +79,9 @@ def run_pipeline(image_path: str):
 
     summary = {"image": str(image_path),
                "detections_by_class": {c: 0 for c in DET_CLASSES.values()},
-               "potholes_by_tier": {"low": 0, "medium": 0, "high": 0}}
+               "potholes_by_tier": {"low": 0, "medium": 0, "high": 0},
+               "severity_note": "Non-pothole classes (D00/D10/D20) are detected but severity is "
+                                "n/a (potholes only); tiers apply to D40."}
     annotated = img.copy()
     for b in res.boxes:
         cls, conf = int(b.cls), float(b.conf)
@@ -99,7 +101,8 @@ def run_pipeline(image_path: str):
                         FONT, 0.5, color, 2)
         else:
             cv2.rectangle(annotated, (x1, y1), (x2, y2), (255, 255, 255), 1)
-            cv2.putText(annotated, f"{name} {conf:.2f}", (x1, max(y1 - 6, 14)), FONT, 0.45, (255, 255, 255), 1)
+            cv2.putText(annotated, f"{name} {conf:.2f} | severity: n/a (potholes only)",
+                        (x1, max(y1 - 6, 14)), FONT, 0.45, (255, 255, 255), 1)
     return annotated, summary
 
 
@@ -117,6 +120,7 @@ def main():
     print(f"\nimage: {summary['image']}")
     print(f"detections by class : {summary['detections_by_class']}")
     print(f"potholes by tier    : {summary['potholes_by_tier']}")
+    print(f"severity note       : {summary['severity_note']}")
     print(f"annotated -> {out}")
     print(RDD2022_SEVERITY_CAVEAT)
 
