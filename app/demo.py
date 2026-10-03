@@ -41,7 +41,7 @@ CAVEATS_MD = f"""
   On any other domain (far/dashcam, tiny/far, mid) the tier is **qualitative/indicative only.**
 - **Calibration gate:** severity is validated only for potholes large in frame (box-area-fraction
   ≥ {SEVERITY_CALIB_MIN_AREA_FRAC}, the PothRGBD p5). Smaller/distant detections show the tier marked
-  **`* uncal`** in a grey box and should be read as indicative only.
+  **`* uncal`** in a blue box and should be read as indicative only.
 - **Operating point:** detector confidence threshold **conf = {DET_CONF}** (locked); imgsz 640.
 - Single-class detector: every detection is a **pothole**, boxed and colored by severity tier
   (**green=low / amber=medium / red=high**) with the tier shown on the box.
@@ -83,7 +83,7 @@ def build_demo():
             inp = gr.Image(type="filepath", label="Road image", sources=["upload"])
             out_img = gr.Image(label="Annotated output")
         gr.Markdown("*Legend: colored box = calibrated severity (green=low / amber=medium / red=high); "
-                    "grey box + `* uncal` = severity shown but uncalibrated (pothole too small/distant).*")
+                    "blue box + `* uncal` = severity shown but uncalibrated (pothole too small/distant).*")
         run_btn = gr.Button("Run pipeline", variant="primary")
         out_md = gr.Markdown(label="Summary")
         run_btn.click(predict, inputs=inp, outputs=[out_img, out_md])

@@ -31,7 +31,8 @@ DET_CONF = 0.20          # locked operating point (Component 5.1)
 DET_IMGSZ = 640
 DET_CLASSES = {0: "pothole"}   # single-class: every detection is a pothole
 TIER_COLORS = {"low": (0, 200, 0), "medium": (0, 180, 255), "high": (0, 0, 255)}  # BGR (calibrated)
-UNCAL_COLOR = (150, 150, 150)   # muted grey: tier shown but severity uncalibrated
+UNCAL_COLOR = (255, 200, 0)   # BGR light blue/cyan: a SEPARATE 'uncalibrated' category (not a tier),
+#   high-contrast on asphalt and distinct from green/amber/red tier colors
 SEVERITY_CALIB_MIN_AREA_FRAC = 0.123   # PothRGBD p5; below this, severity is OUT of its validated
 #   size range -> tier shown but marked uncalibrated. Set from data: src/detection/diag_severity_gate.py
 OUT_DIR = Path("data/_pipeline_test")
