@@ -681,3 +681,17 @@ Per source (pothole imgs): rdd far_dashcam 1,509 (40.3%) · pothrgbd close_up 99
 Overlays (data/crossdomain/_verify/, 3/source) confirm conversion unchanged from prior verified round: PothRGBD seg->tight bbox, Kaggle tiny boxes land on distant potholes.
 
 Next: 10.3 frozen cross-domain split (full-pool pHash grouping = leakage guard; stratify by source/domain; per-image domain tag for per-domain eval; single-class data.yaml).
+
+## 2026-10-03 — Component 10.4-10.5: cross-domain detector trained + evaluated
+
+10.4 train (done): YOLO11s single-class, imgsz 640, 100 epochs, default aug, seed 0, batch 16 — baseline recipe held fixed, only data (4-domain pool) + nc=1 changed. Colab T4, 2.04h. Val: P 0.608 / R 0.501 / mAP@50 0.540 / mAP@50-95 0.251. Weights: MyDrive/pothole/checkpoints/crossdomain/best.pt -> local data/weights/crossdomain_best.pt. Notebook notebooks/train_crossdomain.ipynb + notebooks/colab_setup_crossdomain.py (committed 10.4).
+
+10.5 eval (done): per-domain TEST eval, baseline(India-only, D40-only) vs cross-domain, same stratified evaluator / conf 0.20 / IoU 0.5 / same 802 test imgs. GT deduped (tiny_far 541->389, 152 Kaggle Roboflow exact-dup box rows; other domains 0).
+Per-domain AP@50 (baseline -> cross-domain):
+  far_dashcam 0.551 -> 0.445 (baseline better on its home turf — honest trade-off)
+  close_up    0.023 -> 0.919 (baseline found 2/162; this was the demo failure)
+  tiny_far    0.045 -> 0.539
+  mid         0.035 -> 0.518 (n=64 imgs, noisy — caveat)
+  OVERALL     0.236 -> 0.566 ; recall 0.226 -> 0.575 at ~equal precision (~0.52)
+Claim "works across domains" is MEASURED. Trade-off: small far-domain loss for large close/tiny/mid gains. far_dashcam figures here are NOT comparable to Component-3's 0.389 (different split/images/single-class); only within-table BL-vs-CD is apples-to-apples.
+src/detection/eval_crossdomain.py. Pipeline now uses crossdomain_best.pt (single-class); severity stage unchanged.

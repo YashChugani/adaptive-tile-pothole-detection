@@ -34,14 +34,14 @@ EXAMPLES = [[p] for p in _EXAMPLE_CANDIDATES if Path(p).exists()]
 
 CAVEATS_MD = f"""
 ### Caveats (please read)
-- **Detector domain:** YOLO11s trained on **RDD2022 India** (dashcam road scenes) — works best
-  on that domain and may detect little on close-up or other-domain images (e.g. PothRGBD).
-- **Severity on RDD is QUALITATIVE:** no depth ground truth and cross-domain from the severity
-  training set. **Validated severity (0.67 test accuracy) is on the PothRGBD test split.**
+- **Detector domain:** YOLO11s trained across **4 capture domains** (far/dashcam, close-up,
+  tiny/far, mid) and evaluated per-domain — it performs across all four. Measured trade-off: a
+  far-domain-only baseline does slightly better on far/dashcam alone.
+- **Severity is VALIDATED only on close-range (PothRGBD-like) potholes** (0.67 test accuracy).
+  On any other domain (far/dashcam, tiny/far, mid) the tier is **qualitative/indicative only.**
 - **Operating point:** detector confidence threshold **conf = {DET_CONF}** (locked); imgsz 640.
-- Pothole (D40) boxes are colored by tier: **green=low / amber=medium / red=high**. Other damage
-  classes (D00/D10/D20) are detected but **severity is n/a (potholes only)** — shown as
-  "severity: n/a" on the box and noted in the summary.
+- Single-class detector: every detection is a **pothole**, boxed and colored by severity tier
+  (**green=low / amber=medium / red=high**) with the tier shown on the box.
 """
 
 
@@ -49,10 +49,8 @@ def _summary_md(summary: dict) -> str:
     d = summary["detections_by_class"]; t = summary["potholes_by_tier"]
     lines = ["**Detections by class**", "", "| class | count |", "|---|---|"]
     lines += [f"| {k} | {v} |" for k, v in d.items()]
-    lines += ["", "**Potholes (D40) by severity tier**", "", "| tier | count |", "|---|---|"]
+    lines += ["", "**Potholes by severity tier**", "", "| tier | count |", "|---|---|"]
     lines += [f"| {k} | {v} |" for k, v in t.items()]
-    if summary.get("severity_note"):
-        lines += ["", f"_{summary['severity_note']}_"]
     return "\n".join(lines)
 
 
