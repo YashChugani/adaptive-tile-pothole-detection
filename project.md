@@ -659,3 +659,25 @@ low/med/high tier, trained on a depth dataset (RDD2022 has no severity labels).
 - **CNN 0.318 vs heuristic 0.28**, both near chance → the **learned severity is
   sensor/domain-specific**; cross-sensor transfer **does not hold** and is a **stated
   limitation** (parallels the tiling negative result in §22 — honest negatives, not hidden).
+
+## 2026-10-03 — Component 10 (cross-domain detector): 10.1–10.2 complete
+
+Goal (C1, current framing): single-class ("pothole"=0) YOLO11s trained across capture domains — far/dashcam, mid, close-up, tiny/distant — vs. the usual single-dataset detector. Motivated by the demo failing on close-up potholes (India-only baseline never saw that domain).
+
+10.1 inspect (done): confirmed classes/formats for 4 sources. roaddmg ≈ RDD repackage (cross-source dups); kaggle clean of cross-source dups. src/detection/inspect_crossdomain.py.
+
+10.2 unify/convert/dedup/pool (done): src/detection/build_crossdomain.py. Output data/crossdomain/unified/ (gitignored) + manifest.csv + DEDUP_NOTE.txt.
+
+Dedup policy (corrected after a bug):
+- PothRGBD (close_up): file-content hash (md5), exact-dup only -> 0 drops, all 996 kept. pHash is non-discriminative on close-ups (first build collapsed ~590/1000; even pHash Hamming==0 dropped 182 DISTINCT potholes). Fix = content hash.
+- rdd / roaddmg / kaggle: greedy keep-first pHash<=3 (no single-linkage chaining).
+- Cross-source: roaddmg-vs-rdd pHash<=3 (dropped 163 repackaged dups).
+- Background cap 30% of pool (rdd has 6,176 empty frames; must not dominate).
+- Dedup is hygiene only — the leakage guard is 10.3 pHash-grouping the full pool across the split.
+
+Final pooled set: 5,347 images (3,743 pothole + 1,604 bg = 30.0%), 8,234 boxes.
+Per source (pothole imgs): rdd far_dashcam 1,509 (40.3%) · pothrgbd close_up 996 (26.6%) · kaggle tiny_far 937 (25.0%) · roaddmg mid 301 (8.0%). No source >41%; genuine 4-domain spread.
+
+Overlays (data/crossdomain/_verify/, 3/source) confirm conversion unchanged from prior verified round: PothRGBD seg->tight bbox, Kaggle tiny boxes land on distant potholes.
+
+Next: 10.3 frozen cross-domain split (full-pool pHash grouping = leakage guard; stratify by source/domain; per-image domain tag for per-domain eval; single-class data.yaml).

@@ -47,6 +47,7 @@ The two datasets are disjoint (RDD2022 has boxes but no severity; the severity s
 
 - **Preserve the author's own variable names and code structure** when editing existing code — do not rename or restructure without a clearly stated reason.
 - Keep modules small and mirroring the architecture (`detection` / `severity` / `pipeline`); prefer readable code over cleverness.
+- pHash: discriminative on far/varied/dashcam scenes; NON-discriminative whenever the pothole is uniform or a tiny fraction of the frame (close-ups = "dark blob on gray"). For close-up datasets (PothRGBD) use file-content hash (md5) for exact-dup, NOT pHash — pHash Hamming==0 still collapsed 182 distinct close-ups. For far/varied/dashcam within-source use greedy keep-first pHash<=3, never single-linkage (chaining).
 
 ## Non-Negotiable Constraints
 
