@@ -19,7 +19,7 @@ import gradio as gr
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root
 from src.pipeline import (DET_CONF, DETECTOR_WEIGHTS, RDD2022_SEVERITY_CAVEAT,  # reuse constants
-                          SEVERITY_WEIGHTS, run_pipeline)
+                          SEVERITY_CALIB_MIN_AREA_FRAC, SEVERITY_WEIGHTS, run_pipeline)
 
 SHARE = os.environ.get("GRADIO_SHARE", "0") == "1"   # temporary public link if True
 
@@ -39,6 +39,9 @@ CAVEATS_MD = f"""
   far-domain-only baseline does slightly better on far/dashcam alone.
 - **Severity is VALIDATED only on close-range (PothRGBD-like) potholes** (0.67 test accuracy).
   On any other domain (far/dashcam, tiny/far, mid) the tier is **qualitative/indicative only.**
+- **Calibration gate:** severity is validated only for potholes large in frame (box-area-fraction
+  ≥ {SEVERITY_CALIB_MIN_AREA_FRAC}, the PothRGBD p5). Smaller/distant detections show the tier marked
+  **`* uncal`** in a grey box and should be read as indicative only.
 - **Operating point:** detector confidence threshold **conf = {DET_CONF}** (locked); imgsz 640.
 - Single-class detector: every detection is a **pothole**, boxed and colored by severity tier
   (**green=low / amber=medium / red=high**) with the tier shown on the box.
@@ -46,11 +49,16 @@ CAVEATS_MD = f"""
 
 
 def _summary_md(summary: dict) -> str:
-    d = summary["detections_by_class"]; t = summary["potholes_by_tier"]
+    d = summary["detections_by_class"]
+    cal = summary["potholes_by_tier_calibrated"]
+    unc = summary["potholes_by_tier_uncalibrated"]
     lines = ["**Detections by class**", "", "| class | count |", "|---|---|"]
     lines += [f"| {k} | {v} |" for k, v in d.items()]
-    lines += ["", "**Potholes by severity tier**", "", "| tier | count |", "|---|---|"]
-    lines += [f"| {k} | {v} |" for k, v in t.items()]
+    lines += ["", "**Potholes by severity tier — calibrated (close-range)**", "", "| tier | count |", "|---|---|"]
+    lines += [f"| {k} | {v} |" for k, v in cal.items()]
+    lines += ["", "**Potholes by severity tier — uncalibrated (out of validated size range, indicative only)**",
+              "", "| tier | count |", "|---|---|"]
+    lines += [f"| {k} | {v} |" for k, v in unc.items()]
     return "\n".join(lines)
 
 
@@ -74,6 +82,8 @@ def build_demo():
         with gr.Row():
             inp = gr.Image(type="filepath", label="Road image", sources=["upload"])
             out_img = gr.Image(label="Annotated output")
+        gr.Markdown("*Legend: colored box = calibrated severity (green=low / amber=medium / red=high); "
+                    "grey box + `* uncal` = severity shown but uncalibrated (pothole too small/distant).*")
         run_btn = gr.Button("Run pipeline", variant="primary")
         out_md = gr.Markdown(label="Summary")
         run_btn.click(predict, inputs=inp, outputs=[out_img, out_md])

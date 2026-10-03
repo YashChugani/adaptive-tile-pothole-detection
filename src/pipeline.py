@@ -30,7 +30,10 @@ SEVERITY_WEIGHTS = "data/severity/cpu_ckpts/severity_best_finetune_all.pt"
 DET_CONF = 0.20          # locked operating point (Component 5.1)
 DET_IMGSZ = 640
 DET_CLASSES = {0: "pothole"}   # single-class: every detection is a pothole
-TIER_COLORS = {"low": (0, 200, 0), "medium": (0, 180, 255), "high": (0, 0, 255)}  # BGR
+TIER_COLORS = {"low": (0, 200, 0), "medium": (0, 180, 255), "high": (0, 0, 255)}  # BGR (calibrated)
+UNCAL_COLOR = (150, 150, 150)   # muted grey: tier shown but severity uncalibrated
+SEVERITY_CALIB_MIN_AREA_FRAC = 0.123   # PothRGBD p5; below this, severity is OUT of its validated
+#   size range -> tier shown but marked uncalibrated. Set from data: src/detection/diag_severity_gate.py
 OUT_DIR = Path("data/_pipeline_test")
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 RDD2022_SEVERITY_CAVEAT = (
@@ -80,7 +83,9 @@ def run_pipeline(image_path: str):
 
     summary = {"image": str(image_path),
                "detections_by_class": {c: 0 for c in DET_CLASSES.values()},
-               "potholes_by_tier": {"low": 0, "medium": 0, "high": 0}}
+               "potholes_by_tier_calibrated": {"low": 0, "medium": 0, "high": 0},
+               "potholes_by_tier_uncalibrated": {"low": 0, "medium": 0, "high": 0},
+               "potholes_calibrated_total": 0, "potholes_uncalibrated_total": 0}
     annotated = img.copy()
     for b in res.boxes:
         cls, conf = int(b.cls), float(b.conf)
@@ -93,11 +98,21 @@ def run_pipeline(image_path: str):
         if crop.size == 0:
             continue
         tier, tconf = predict_tier(sev_model, sev_classes, crop)
-        summary["potholes_by_tier"][tier] += 1
-        color = TIER_COLORS[tier]
+        # calibration gate: severity validated only for close-range (large-in-frame) potholes
+        area_frac = ((x2 - x1) * (y2 - y1)) / float(w * h)
+        calibrated = area_frac >= SEVERITY_CALIB_MIN_AREA_FRAC
+        if calibrated:
+            summary["potholes_by_tier_calibrated"][tier] += 1
+            summary["potholes_calibrated_total"] += 1
+            color = TIER_COLORS[tier]
+            label = f"{name} {conf:.2f} | {tier} {tconf:.2f}"
+        else:
+            summary["potholes_by_tier_uncalibrated"][tier] += 1
+            summary["potholes_uncalibrated_total"] += 1
+            color = UNCAL_COLOR
+            label = f"{name} {conf:.2f} | {tier}* uncal"   # no tconf: honest about uncalibrated guess
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(annotated, f"{name} {conf:.2f} | {tier} {tconf:.2f}", (x1, max(y1 - 6, 14)),
-                    FONT, 0.5, color, 2)
+        cv2.putText(annotated, label, (x1, max(y1 - 6, 14)), FONT, 0.5, color, 2)
     return annotated, summary
 
 
@@ -113,8 +128,9 @@ def main():
     cv2.imwrite(str(out), annotated)
 
     print(f"\nimage: {summary['image']}")
-    print(f"detections by class : {summary['detections_by_class']}")
-    print(f"potholes by tier    : {summary['potholes_by_tier']}")
+    print(f"detections by class     : {summary['detections_by_class']}")
+    print(f"potholes (calibrated)   : {summary['potholes_by_tier_calibrated']}  total={summary['potholes_calibrated_total']}")
+    print(f"potholes (uncalibrated) : {summary['potholes_by_tier_uncalibrated']}  total={summary['potholes_uncalibrated_total']}")
     print(f"annotated -> {out}")
     print(RDD2022_SEVERITY_CAVEAT)
 

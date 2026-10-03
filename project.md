@@ -695,3 +695,14 @@ Per-domain AP@50 (baseline -> cross-domain):
   OVERALL     0.236 -> 0.566 ; recall 0.226 -> 0.575 at ~equal precision (~0.52)
 Claim "works across domains" is MEASURED. Trade-off: small far-domain loss for large close/tiny/mid gains. far_dashcam figures here are NOT comparable to Component-3's 0.389 (different split/images/single-class); only within-table BL-vs-CD is apples-to-apples.
 src/detection/eval_crossdomain.py. Pipeline now uses crossdomain_best.pt (single-class); severity stage unchanged.
+
+## 2026-10-03 — Component 10 complete: severity calibration gate + demo honesty
+
+Severity is validated only on close-range PothRGBD crops. The cross-domain detector now fires on far/tiny/mid potholes too, where severity is out of its validated size range. Added a calibration gate so the demo never shows a confident severity it can't back:
+- Gate: box-area-fraction >= SEVERITY_CALIB_MIN_AREA_FRAC (T=0.123 = PothRGBD-train p5), set from data via src/detection/diag_severity_gate.py. Above T -> calibrated (full tier color + confidence); below T -> tier shown in grey, marked "* uncal", confidence dropped.
+- Threshold separates domains cleanly: PothRGBD-train p5=0.123; test median box-area-frac close_up 0.254, far_dashcam 0.0087, tiny_far 0.0003, mid 0.037. At T=0.123: calibrated share close_up ~85%, far_dashcam ~4%, tiny_far 0%, mid ~17%.
+- Conservative by design: occasionally flags a valid close-up as uncalibrated (close_up left tail < T), never the reverse.
+- Summary reports calibrated and uncalibrated tier counts separately (no mixing validated and guessed tiers).
+- pipeline.py gates display only (predict_tier still runs for all); demo.py shows two tier tables + legend + gate caveat.
+- 14-image visual gate confirmed: close_up all full-color calibrated, far/tiny all grey uncal, mid mixed, negatives ~clean (mid negative fired 3 on unlabeled-but-plausible damaged surface).
+Also committed: package_crossdomain.py (10.4A packager; reproducibility). Component 10 (cross-domain detection + honest severity display) done.
