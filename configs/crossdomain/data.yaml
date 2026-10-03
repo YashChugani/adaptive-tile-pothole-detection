@@ -1,0 +1,9 @@
+# Single-class cross-domain pothole dataset (Component 10.3).
+# Paths are RELATIVE to the repo root (run from there). Colab-local ABSOLUTE paths are
+# generated at runtime by the setup step and are NEVER committed.
+path: .
+train: configs/crossdomain/train.txt
+val: configs/crossdomain/val.txt
+test: configs/crossdomain/test.txt
+nc: 1
+names: [pothole]

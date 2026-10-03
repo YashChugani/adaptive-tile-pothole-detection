@@ -1,0 +1,44 @@
+{
+  "seed": 42,
+  "targets": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "hamming": 3,
+  "grouping_policy": {
+    "far_sources": [
+      "kaggle",
+      "rdd",
+      "roaddmg"
+    ],
+    "far_method": "greedy keep-first pHash<=3",
+    "closeup_sources": [
+      "pothrgbd"
+    ],
+    "closeup_method": "md5 file-content exact"
+  },
+  "total_images": 5347,
+  "total_groups": 5347,
+  "groups_by_domain": {
+    "tiny_far": 937,
+    "close_up": 996,
+    "far_dashcam": 2989,
+    "mid": 425
+  },
+  "per_split": {
+    "train": {
+      "images": 3743,
+      "background": 1124
+    },
+    "val": {
+      "images": 802,
+      "background": 240
+    },
+    "test": {
+      "images": 802,
+      "background": 240
+    }
+  },
+  "timestamp": "2026-10-03T16:05:52"
+}
