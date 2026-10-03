@@ -62,6 +62,7 @@ Run the demo:
 .venv\Scripts\python.exe app/demo.py
 ```
 then open **http://127.0.0.1:7860**.
+- Sample road images to try are in **demo_samples/** - one per capture domain plus clean-road negatives
 
 **Legend:** a colored box = **calibrated** severity (green = low, amber = medium, red = high); a **cyan box + `* uncal`** = severity shown but **not validated at that range** (pothole too small/distant).
 
@@ -74,6 +75,7 @@ src/pipeline.py    end-to-end inference (detector -> severity -> calibration gat
 app/demo.py        Gradio demo over the pipeline
 configs/           frozen split manifests + data.yaml (crossdomain, rdd_india, severity_meta)
 notebooks/         Colab training notebooks + setup modules
+demo_samples/      Sample road images across all domains
 ```
 `data/` (datasets, crops, weights, outputs) is **gitignored** — only code + small frozen manifests are tracked.
 
